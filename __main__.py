@@ -12,9 +12,12 @@ from util import *
 from xmltv import *
 from ui import *
 
+__version__ = (1, 0, 0)
+__version_info__ = ".".join(map(str, __version__))
+
 APP_NAME    = "quick-xmltv"
 APP_AUTHOR  = "bell345"
-APP_VERSION = "1.0"
+APP_VERSION = __version_info__
 LICENSE = """The MIT License (MIT)
 Copyright (c) 2015 Thomas Bell
 
@@ -56,7 +59,7 @@ def main():
     parser.add_argument("--license", action="store_true",
             help="show license information and exit")
 
-    parser.add_argument("-u", "--channel-url", 
+    parser.add_argument("-u", "--channel-url",
             default="http://xml.oztivo.net/xmltv/channels.xml.gz",
             help="URL used to retrieve the list of channels for querying.")
     parser.add_argument("channel", nargs="*",
@@ -89,7 +92,7 @@ def main():
     start = datetime.combine(args.date, args.time)
     end = start + args.range
     load_channels(valid_channels, start.date(), end.date())
-    
+
     listings = get_program_listings(valid_channels, start, end)
     progs = sum([listings[id] for id in listings], [])
 
