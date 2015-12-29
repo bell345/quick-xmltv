@@ -13,7 +13,7 @@ import hashlib
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-__version_info__ = (1, 0, 0)
+__version_info__ = (1, 0, 1)
 __version__ = ".".join(map(str, __version_info__))
 
 class Cache:
@@ -112,9 +112,10 @@ class Cache:
         try:
             res = urlopen(req)
         except HTTPError as e:
-            if e.code == 304:
+            if os.path.isfile(cache_path):
                 return self.get(url)
             else:
+                print("Could not load cache URL {}.".format(url))
                 raise
 
         manifest["url"] = url

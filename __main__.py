@@ -12,7 +12,7 @@ from util import *
 from xmltv import *
 from ui import *
 
-__version__ = (1, 0, 0)
+__version__ = (1, 1, 0)
 __version_info__ = ".".join(map(str, __version__))
 
 APP_NAME    = "quick-xmltv"
@@ -93,10 +93,7 @@ def main():
     end = start + args.range
     load_channels(valid_channels, start.date(), end.date())
 
-    listings = get_program_listings(valid_channels, start, end)
-    progs = sum([listings[id] for id in listings], [])
-
-    epg_navigation(valid_channels, start, end)
+    epg_navigation(valid_channels, start, end, cache)
 
 if __name__ == "__main__":
     main()

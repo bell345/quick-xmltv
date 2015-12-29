@@ -117,7 +117,7 @@ class Progress:
 
             if self.event.is_set():
                 if not self.overwrite:
-                    print("\n")
+                    print("")
                 break
 
             timer += update_rate

@@ -3,7 +3,9 @@
 import re
 import shutil
 from getch import getch
+from time import sleep
 from math import floor, ceil
+from urllib.error import HTTPError
 from datetime import datetime, date, time, timedelta
 
 from util import *
@@ -11,25 +13,29 @@ from xmltv import get_program_listings
 
 def ask_channels(channels, selection=[]):
     def final_choice(chan=None, retry=True):
-        items = ["Add and [F]inish", "[L]ist"]
-        if chan != None: items.append("Add and [C]ontinue")
+        items = ["[F]inish", "[L]ist"]
+        if chan != None: items.append("[C]ontinue")
         if retry: items.append("[R]etry")
         prompt = ", ".join(items) + "? "
         choice = sensible_input(prompt).lower()[0]
 
         if choice == "c" and chan != None:
-            selection.append(chan.id)
+            if chan.id in selection:
+                print("Channel has already been selected!")
+            else: selection.append(chan.id)
             return ask_channels(channels, selection)
         elif choice == "r" and retry:
             return ask_channels(channels, selection)
         elif choice == "f":
             if chan != None:
-                selection.append(chan.id)
+                if chan.id in selection:
+                    print("Channel has already been selected!")
+                else: selection.append(chan.id)
             return [channels[id] for id in selection]
         elif choice == "l":
             for id in selection:
                 print(str(channels[id]))
-            print("[*] {}".format(str(channels[id])))
+            print("[*] {}".format(str(chan)))
             return final_choice(chan)
         else:
             print("Invalid choice.")
@@ -73,6 +79,7 @@ def print_epg(channels, start, end, highlight=None):
     align       = lambda dt, align=60*30: datetime.fromtimestamp(floor(dt.timestamp() / align) * align)
     timestr     = lambda dt: dt.strftime("%H:%M")
     time_to_pos = lambda dt, length: int((max(dt - start, ZERODELTA).seconds / gap.seconds) * length)
+
     def cover(full, sub, start, bound=True, overwrite=True):
         start = max(start, 0)
         end = start + (len(sub) if overwrite else 0)
@@ -142,27 +149,63 @@ def print_epg(channels, start, end, highlight=None):
         s += ansi.RESET
         print(prefix + s)
 
-def epg_navigation(channels, start, end):
+def epg_navigation(channels, start, end, cache):
     UP, DOWN, RIGHT, LEFT = '\033[A', '\033[B', '\033[C', '\033[D'
+    INTERVAL = timedelta(0, 60*30) # 30 minutes
     listings = get_program_listings(channels, start, end)
-    progs = sum([listings[id] for id in listings], [])
-    highlight = progs[0]
+    highlight = None
     columns, rows = shutil.get_terminal_size((80, 24))
     info = "-- QUICK XMLTV --".center(columns)
+
+    def reset():
+        nonlocal highlight
+        for id in listings:
+            if len(listings[id]) == 0:
+                continue
+            highlight = listings[id][0]
+
+    reset()
+    curr_time = highlight.start
 
     def find_chindex():
         for i,ch in enumerate(channels):
             if ch.id == highlight.channel:
                 return i
         return -1
-    def find_closest(id):
-        for prog in listings[id]:
-            if prog.start >= highlight.start:
-                return prog
-        return prog
+    def find_closest(id, start):
+        return min(listings[id], key=lambda p: abs(p.start - start))
+
+    def time_travel_back():
+        nonlocal end
+        nonlocal start
+        end -= INTERVAL
+        start -= INTERVAL
+    def time_travel_forwards():
+        nonlocal end
+        nonlocal start
+        end += INTERVAL
+        start += INTERVAL
     
     def update():
+        nonlocal listings
+        while highlight.start > end:
+            time_travel_forwards()
+        while highlight.end < start:
+            time_travel_back()
+
+        for ch in channels:
+            try:
+                if start.date().isoformat() not in ch.programs:
+                    with Progress("Loading program information for {}".format(ch.id)):
+                        ch.fetch(start.date(), cache)
+                if end.date().isoformat() not in ch.programs:
+                    with Progress("Loading program information for {}".format(ch.id)):
+                        ch.fetch(end.date(), cache)
+            except HTTPError:
+                pass
+
         clear()
+        listings = get_program_listings(channels, start, end)
         print_epg(channels, start, end, highlight)
         print("")
         print(info)
@@ -190,26 +233,30 @@ def epg_navigation(channels, start, end):
                 exit(0)
 
             listing = listings[highlight.channel]
-            i = listing.index(highlight)
+            i = listing.index(highlight) if highlight in listing else -1
             j = find_chindex()
             if ch == LEFT:
-                if i == -1: highlight = progs[0]
+                if i == -1: reset()
                 elif i != 0: highlight = listing[i-1]
+                else: time_travel_back()
+                curr_time = highlight.start
             elif ch == RIGHT:
-                if i == -1: highlight = progs[0]
+                if i == -1: reset()
                 elif i != len(listing)-1: highlight = listing[i+1]
+                else: time_travel_forwards()
+                curr_time = highlight.start
             elif ch == UP:
-                if j == -1: highlight = progs[0]
+                if j == -1: reset()
                 elif j != 0:
                     next_ch = channels[j-1]
-                    highlight = find_closest(next_ch.id)
+                    highlight = find_closest(next_ch.id, curr_time)
             elif ch == DOWN:
-                if j == -1: highlight = progs[0]
+                if j == -1: reset()
                 elif j != len(channels)-1:
                     next_ch = channels[j+1]
-                    highlight = find_closest(next_ch.id)
+                    highlight = find_closest(next_ch.id, curr_time)
         else:
-            if ord(ch) == 13:
+            if ord(ch) == 13: # enter/return
                 info = highlight.info()
 
         update()
