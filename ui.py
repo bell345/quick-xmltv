@@ -78,7 +78,7 @@ def print_epg(channels, start, end, highlight=None):
     escs        = lambda s, end=None: sum(map(len, ANSI_RE.findall(s[:end])))
     align       = lambda dt, align=60*30: datetime.fromtimestamp(floor(dt.timestamp() / align) * align)
     timestr     = lambda dt: dt.strftime("%H:%M")
-    time_to_pos = lambda dt, length: int((max(dt - start, ZERODELTA).seconds / gap.seconds) * length)
+    time_to_pos = lambda dt, length: min(int((max(dt - start, ZERODELTA).seconds / gap.seconds) * length), length)
 
     def cover(full, sub, start, bound=True, overwrite=True):
         start = max(start, 0)
@@ -117,7 +117,7 @@ def print_epg(channels, start, end, highlight=None):
     time_scale = " " * firstcol_len
     remaining = max(columns - firstcol_len, SZ)
 
-    divisions = (gap.seconds / (60 * 30))
+    divisions = (gap.seconds / (60 * 15))
     while divisions * (SZ + 4) > remaining:
         divisions /= 2
 
@@ -125,6 +125,9 @@ def print_epg(channels, start, end, highlight=None):
     for i in range(int(divisions)):
         time_scale += timestr(start + (gap / divisions) * i) + " " * spacing
     # time_scale += timestr(start + (gap / divisions) * int(divisions))
+    i = time_to_pos(datetime.now(), remaining) + firstcol_len
+    part = ansi.BLACK + ansi.BG_WHITE
+    time_scale = insert(insert(time_scale, part, i, bound=False), ansi.RESET, i + len(part) + 1, bound=False)
     print(time_scale)
     
     for ch in channels:

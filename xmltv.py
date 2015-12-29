@@ -143,7 +143,7 @@ class TVProgram:
 
         sub_stuff = []
         if self.sub_title: sub_stuff.append(self.sub_title)
-        if self.date and self.date != self.start: sub_stuff.append(self.date.strftime("%Y"))
+        if self.date and self.date.date() != self.start.date(): sub_stuff.append(self.date.strftime("%Y"))
 
         if len(sub_stuff) > 0: s += " (" + ", ".join(sub_stuff) + ")"
         if self.description: s += "\n\n" + self.description

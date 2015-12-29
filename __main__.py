@@ -12,7 +12,7 @@ from util import *
 from xmltv import *
 from ui import *
 
-__version__ = (1, 1, 0)
+__version__ = (1, 1, 1)
 __version_info__ = ".".join(map(str, __version__))
 
 APP_NAME    = "quick-xmltv"
