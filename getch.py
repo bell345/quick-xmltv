@@ -18,7 +18,7 @@ screen."""
                 raise KeyboardInterrupt
             elif char == '\x04':
                 raise EOFError
-            str += char
+            str += char if type(char) != bytes else char.decode("raw_unicode_escape")
             n -= 1
         return str
 

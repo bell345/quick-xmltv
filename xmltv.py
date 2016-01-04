@@ -41,10 +41,10 @@ class TVChannel:
                     return None
                 else:
                     print("Error when retrieving program info: ")
-                    abort(traceback.format_exc())
+                    abort(e)
             except Exception as e:
                 print("Error when retrieving program info: ")
-                abort(traceback.format_exc())
+                abort(e)
 
             self.programs[iso] = [TVProgram(e) for e in dom.getElementsByTagName("programme")]
 
@@ -131,7 +131,7 @@ class TVProgram:
 
     def __str__(self):
         return "{} [{} - {}]".format(self.title.upper(), self.start.strftime("%H:%M"), self.end.strftime("%H:%M"))
-    
+
     def __eq__(self, other):
         return other.element == self.element
 
@@ -141,9 +141,11 @@ class TVProgram:
             s += "[{} - {}]\n".format(self.start.strftime("%H:%M"), self.end.strftime("%H:%M"))
         s += self.title.upper()
 
+        now = datetime.now()
         sub_stuff = []
         if self.sub_title: sub_stuff.append(self.sub_title)
-        if self.date and self.date.date() != self.start.date(): sub_stuff.append(self.date.strftime("%Y"))
+        if self.date and self.date.date() != now.date():
+            sub_stuff.append(self.date.strftime("%Y"))
 
         if len(sub_stuff) > 0: s += " (" + ", ".join(sub_stuff) + ")"
         if self.description: s += "\n\n" + self.description
@@ -168,7 +170,7 @@ def parse_channels(channel_url, cache):
         dom = MD.parseString(decomp).documentElement
     except Exception as e:
         print("Error when fetching channel info: ")
-        abort(traceback.format_exc())
+        abort(e)
 
     channels = {}
     for e in dom.getElementsByTagName("channel"):

@@ -6,13 +6,18 @@ import appdirs
 import argparse
 from math import floor, ceil
 from datetime import date, time, datetime, timedelta
+try:
+    from colorama import init
+    init()
+except ImportError:
+    pass
 
 from ecache import Cache
 from util import *
 from xmltv import *
 from ui import *
 
-__version__ = (1, 1, 1)
+__version__ = (1, 2, 1)
 __version_info__ = ".".join(map(str, __version__))
 
 APP_NAME    = "quick-xmltv"
@@ -93,7 +98,10 @@ def main():
     end = start + args.range
     load_channels(valid_channels, start.date(), end.date())
 
-    epg_navigation(valid_channels, start, end, cache)
+    #epg_navigation(valid_channels, start, end, cache)
+    epg = EPG(valid_channels, start, end, cache)
+    while True:
+        epg.listener()
 
 if __name__ == "__main__":
     main()

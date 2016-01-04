@@ -4,12 +4,13 @@ import os
 import sys
 import shutil
 import threading
+import traceback
 from time import sleep
 from datetime import time, date, datetime, timedelta
 
 class ansi:
     RESET      = "\033[0m"
-    
+
     BLACK      = "\033[30m"
     RED        = "\033[31m"
     GREEN      = "\033[32m"
@@ -18,7 +19,7 @@ class ansi:
     MAGENTA    = "\033[35m"
     CYAN       = "\033[36m"
     WHITE      = "\033[37m"
-    
+
     BBLACK      = "\033[30;1m"
     BRED        = "\033[31;1m"
     BGREEN      = "\033[32;1m"
@@ -27,7 +28,7 @@ class ansi:
     BMAGENTA    = "\033[35;1m"
     BCYAN       = "\033[36;1m"
     BWHITE      = "\033[37;1m"
-    
+
     BG_BLACK   = "\033[40m"
     BG_RED     = "\033[41m"
     BG_GREEN   = "\033[42m"
@@ -38,7 +39,7 @@ class ansi:
     BG_WHITE   = "\033[47m"
 
 def abort(msg):
-    print(msg)
+    print(str(msg))
     sys.exit(1)
 
 def sensible_input(prompt):
@@ -59,7 +60,9 @@ def inner_text(el):
     return s
 
 def clear():
-    os.system("cls" if os.name == "nt" else "clear")
+    cmd = "cls" if os.name == "nt" else "clear"
+    os.system(cmd)
+    os.system(cmd)
 
 def timestr_to_delta(timestr):
     if isinstance(timestr, timedelta):
