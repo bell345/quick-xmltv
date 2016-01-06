@@ -178,16 +178,11 @@ def parse_channels(channel_url, cache):
 
     return channels
 
-def get_program_listings(channels, start, end):
+def get_program_listings(channels, start=None, end=None):
+    fil = lambda p: (start is None or end is None) or (p.end > start and p.start < end)
     listings = {}
-    s = start.date().isoformat()
-    e = end.date().isoformat()
     for c in channels:
-        listings[c.id] = []
-        if s in c.programs:
-            listings[c.id] += [p for p in c.programs[s] if p.end > start and p.start < end]
-        if e in c.programs and start.date() != end.date():
-            listings[c.id] += [p for p in c.programs[e] if p.end > start and p.start < end]
+        listings[c.id] = sum(map(lambda d: list(filter(fil, c.programs[d])), c.programs), [])
         listings[c.id].sort(key=lambda p: p.start)
 
     if sum([len(listings[id]) for id in listings]) == 0:

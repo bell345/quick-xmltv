@@ -17,7 +17,7 @@ from util import *
 from xmltv import *
 from ui import *
 
-__version__ = (1, 2, 1)
+__version__ = (1, 2, 2)
 __version_info__ = ".".join(map(str, __version__))
 
 APP_NAME    = "quick-xmltv"
@@ -75,10 +75,20 @@ def main():
             help="The time (HH:MM:SS) at which the query will begin. Defaults to now.")
     parser.add_argument("-r", "--range", default=timedelta(0, 60*60*2), type=timestr_to_delta,
             help="The duration (HH:MM:SS) the query will cover. Defaults to 2 hours.")
+    parser.add_argument("-p", "--cache-first", action="store_true",
+            help="Try to load the cached content before checking if it's outdated.")
+    parser.add_argument("-v", "--verbose", action="store_true",
+            help="Print a greater amount of log output.")
     args = parser.parse_args()
 
     if args.license:
         print_license()
+
+    if args.cache_first:
+        cache.cache_first = True
+
+    if args.verbose:
+        cache.verbose = True
 
     with Progress("Loading channels", overwrite=True):
         channels = parse_channels(args.channel_url, cache)

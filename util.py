@@ -61,6 +61,7 @@ def inner_text(el):
 
 def clear():
     cmd = "cls" if os.name == "nt" else "clear"
+    # for clearing scrollback
     os.system(cmd)
     os.system(cmd)
 

@@ -13,7 +13,7 @@ import hashlib
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-__version_info__ = (1, 0, 2)
+__version_info__ = (1, 1, 0)
 __version__ = ".".join(map(str, __version_info__))
 
 class Cache:
@@ -26,7 +26,7 @@ class Cache:
             Defaults to 'python-ecache/1.0'.
     """
     def __init__(self, cache_dir=appdirs.user_cache_dir("python-ecache", "bell345"), 
-                       user_agent="python-ecache/1.0", verbose=False):
+                       user_agent="python-ecache/1.0", verbose=False, cache_first=False):
 
         if isinstance(cache_dir, tuple):
             cache_dir = appdirs.user_cache_dir(*cache_dir)
@@ -34,6 +34,7 @@ class Cache:
         self.cache_dir = cache_dir
         self.user_agent = user_agent
         self.verbose = verbose
+        self.cache_first = cache_first
         if not os.path.isdir(self.cache_dir):
             os.makedirs(self.cache_dir)
 
@@ -84,7 +85,10 @@ class Cache:
     # of the remote resource.
     # Utilises the ETag/If-None-Match, Last-Modified/If-Modified-Since
     # and Cache-Control HTTP headers.
-    def fetch(self, url):
+    def fetch(self, url, cache_first=None):
+        if cache_first is None:
+            cache_first = self.cache_first
+
         if not os.path.isdir(self.cache_dir):
             os.makedirs(self.cache_dir)
 
@@ -109,13 +113,16 @@ class Cache:
                 req.add_header("If-Modified-Since",
                     manifest["last-modified"])
 
-        try:
-            res = urlopen(req)
-        except:
-            if os.path.isfile(cache_path):
-                return self.get(url)
-            else:
-                print("Could not load cache URL {}.".format(url))
+        if cache_first and os.path.isfile(cache_path):
+            return self.get(url)
+        else:
+            try:
+                res = urlopen(req)
+            except:
+                if os.path.isfile(cache_path):
+                    return self.get(url)
+                else:
+                    print("Could not load cache URL {}.".format(url))
                 raise
 
         manifest["url"] = url
@@ -126,10 +133,11 @@ class Cache:
                 manifest["last-modified"] = res.getheader("Last-Modified")
 
         content = res.read()
-        if "etag" in manifest or "last-modified" in manifest:
-            with self.open_mf(url, "w") as fp:
-                json.dump(manifest, fp)
+        manifest["sha1sum"] = hashlib.sha1(content).hexdigest()
+        with self.open_mf(url, "w") as fp:
+            json.dump(manifest, fp)
 
+        if "etag" in manifest or "last-modified" in manifest:
             self.save(url, content)
 
         return content
