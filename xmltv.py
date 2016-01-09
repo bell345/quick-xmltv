@@ -121,7 +121,7 @@ class TVProgram:
         self.actors      = list_tag("actor", el=get_tag("credits"))
         self.director    = text_tag("director", el=get_tag("credits"))
         d = text_tag("date")
-        self.date        = TVProgram.parseTimestamp(d) if d else now
+        self.date        = TVProgram.parseTimestamp(d) if d else None
         self.categories  = list_tag("category")
         self.rating      = text_tag("value", el=get_tag("rating"))
 
@@ -144,7 +144,7 @@ class TVProgram:
         now = datetime.now()
         sub_stuff = []
         if self.sub_title: sub_stuff.append(self.sub_title)
-        if self.date and self.date.date() != now.date():
+        if self.date:
             sub_stuff.append(self.date.strftime("%Y"))
 
         if len(sub_stuff) > 0: s += " (" + ", ".join(sub_stuff) + ")"

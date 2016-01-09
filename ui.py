@@ -290,7 +290,9 @@ class EPG:
                 else: return None
             progs = get_listings()[id]
             d -= timedelta(1, 0)
-            #enclosed = list(filter(lambda p: p.start <= start and p.end >= start, progs))
+            enclosed = list(filter(lambda p: p.start <= start and p.end >= start, progs))
+            if enclosed:
+                return enclosed[-1]
         return min(progs, key=lambda p: abs(self.bound(p.start) - start))
 
     FORWARDS = 1
@@ -309,13 +311,15 @@ class EPG:
     def jump(self, dt):
         get_full_listings = lambda: get_program_listings(self.channels)
         self.curr_time = dt
-        self.update_time()
         self.highlight = self.find_closest(self.highlight.channel, get_listings=get_full_listings)
+        self.update_time()
 
     def _epg_update(self):
         print_epg(self.channels, self.start, self.end, self.highlight)
         print("")
         print(self.info)
+        print("")
+        print("Jump: ([R]ight now, [N]ext day, [P]revious day), [Q]uit: ")
 
     def _opt_update(self):
         pass
@@ -344,6 +348,8 @@ class EPG:
             self.fetch(self.start.date())
             self.fetch(self.end.date())
             self.fetch(self.curr_time.date())
+            if len(list(filter(lambda p: self.start >= p.start, self.listings[ch.id]))) == 0:
+                self.fetch((self.start - timedelta(1, 0)).date())
 
     def update(self):
         self.update_time()
