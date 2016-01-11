@@ -64,6 +64,7 @@ def clear():
     # for clearing scrollback
     os.system(cmd)
     os.system(cmd)
+    print("\033[3J\033c", end='')
 
 def timestr_to_delta(timestr):
     if isinstance(timestr, timedelta):
